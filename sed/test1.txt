@@ -1,0 +1,13 @@
+aaaa
+bbaa
+pattern1
+12
+1234
+23
+543
+pattern2
+
+<ca>
+ma hoa
+du lieu
+</ca>

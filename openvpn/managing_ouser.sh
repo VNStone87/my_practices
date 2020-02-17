@@ -2,12 +2,13 @@
 OUTDIR=/etc/openvpn/client-config
 TEMFILE=/etc/openvpn/client-config/client.conf
 KEY_DIR=/etc/openvpn/client
+CRLFILE=/etc/openvpn/server/crl.pem
 BASEDIR=/etc/openvpn/easy-rsa/3
 function addUser() {
   ouser=$1
-  if [ "$ouser" == "" ]; then
-    echo "Not found username argument!"
-    exit 1
+  if [ -f ${KEY_DIR}/${ouser}.key]; then
+     echo "User is existing!"
+     exit 1
   fi
   OUTFILE=/etc/openvpn/client-config/$ouser.ovpn
   echo "Adding User..."
@@ -31,12 +32,40 @@ function addUser() {
       ${KEY_DIR}/${ouser}.key \
       <(echo -e '</key>') \
       > ${OUTDIR}/${ouser}.ovpn
-  echo "Output file for OPENVPN client is created at $OUTFILE"
-  
+  echo "Output file for OpenVPN client is created at $OUTFILE"
+
+function delUser() {
+  duser=$1
+  if [ ! -f ${KEY_DIR}/${ouser}.key ]; then
+  echo "User not found!.Please check again"
+  fi
+  cd $BASEDIR
+  ./easyrsa revoke $duser
+  ./easyrsa gen-crl
+  cp -rf pki/crl.pem $CRLFILE
+  /etc/init.d/openvpn restart
+  echo "User is deleted!"
+   
+} 
+ 
 }
 function main() {
-username=$1
-addUser $username
-echo "Done."
+if [! -f "$1"||"$2" ]; then
+  echo "Please enter arguments again. "
+  exit 1
+fi
+        username=$2
+case "$1" in
+  add)
+        addUser $username
+        ;;
+  del)
+        delUser $username
+        ;;
+  *)
+        echo "Usage: ./openvpnUserMan.sh {add|del} user"
+        exit 1
+        ;;
+esac
 }
-main $1
+main $1 $2
